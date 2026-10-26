@@ -1,14 +1,12 @@
 import "./Login.css";
 import "bootstrap/dist/css/bootstrap.css";
-import { useRef, useState } from "react";
-import { useUserInfoActions } from "../../userInfo/UserInfoHooks";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import AuthenticationFormLayout from "../AuthenticationFormLayout";
-import { AuthToken, User } from "tweeter-shared";
-import { useMessageActions } from "../../toaster/MessageHooks";
-import { ToastType } from "../../toaster/Toast";
 import AuthenticationFields from "../AuthenticationFields";
-import { LoginPresenter, LoginView } from "../../../presenter/LoginPresenter";
+import { LoginPresenter } from "../../../presenter/LoginPresenter";
+import { useAuthenticationListener } from "../AuthenticationHooks";
+import { usePresenter } from "../../presenter/PresenterHooks";
 
 interface Props {
   originalUrl?: string;
@@ -20,30 +18,11 @@ const Login = (props: Props) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const navigate = useNavigate();
-  const { updateUserInfo } = useUserInfoActions();
-  const { displayToast } = useMessageActions();
-
-  const listener: LoginView = {
-    setIsLoading: (isLoading: boolean) => setIsLoading(isLoading),
-    updateUserInfo: (
-      currentUser: User,
-      displayedUser: User | null,
-      authToken: AuthToken,
-      remember: boolean
-    ) => updateUserInfo(currentUser, displayedUser, authToken, remember),
-    navigateTo: (url: string) => navigate(url),
-    displayErrorMessage: (message: string) =>
-      displayToast(ToastType.Error, message, 0),
-  };
-
-  const presenterRef = useRef<LoginPresenter | null>(null);
-  if (!presenterRef.current) {
-    presenterRef.current = new LoginPresenter(listener);
-  }
+  const listener = useAuthenticationListener(setIsLoading);
+  const presenter = usePresenter(() => new LoginPresenter(listener));
 
   const checkSubmitButtonStatus = (): boolean => {
-    return presenterRef.current!.checkSubmitButtonStatus(alias, password);
+    return presenter.checkSubmitButtonStatus(alias, password);
   };
 
   const loginOnEnter = (event: React.KeyboardEvent<HTMLElement>) => {
@@ -53,7 +32,7 @@ const Login = (props: Props) => {
   };
 
   const doLogin = async () => {
-    await presenterRef.current!.doLogin(
+    await presenter.doLogin(
       alias,
       password,
       rememberMe,

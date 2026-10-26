@@ -1,47 +1,37 @@
 import "./PostStatus.css";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useUserInfo } from "../userInfo/UserInfoHooks";
-import { useMessageActions } from "../toaster/MessageHooks";
-import { ToastType } from "../toaster/Toast";
+import { useMessageListener } from "../toaster/MessageHooks";
+import { usePresenter } from "../presenter/PresenterHooks";
 import {
   PostStatusPresenter,
   PostStatusView,
 } from "../../presenter/PostStatusPresenter";
 
 const PostStatus = () => {
-  const { displayToast, deleteToast } = useMessageActions();
-
   const { currentUser, authToken } = useUserInfo();
   const [post, setPost] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const listener: PostStatusView = {
-    setPost: (post: string) => setPost(post),
-    setIsLoading: (isLoading: boolean) => setIsLoading(isLoading),
-    displayInfoMessage: (message: string, duration: number) =>
-      displayToast(ToastType.Info, message, duration),
-    displayErrorMessage: (message: string) =>
-      displayToast(ToastType.Error, message, 0),
-    deleteMessage: (messageId: string) => deleteToast(messageId),
+    ...useMessageListener(),
+    setPost,
+    setIsLoading,
   };
-
-  const presenterRef = useRef<PostStatusPresenter | null>(null);
-  if (!presenterRef.current) {
-    presenterRef.current = new PostStatusPresenter(listener);
-  }
+  const presenter = usePresenter(() => new PostStatusPresenter(listener));
 
   const submitPost = async (event: React.MouseEvent) => {
     event.preventDefault();
-    await presenterRef.current!.submitPost(post, currentUser!, authToken!);
+    await presenter.submitPost(post, currentUser!, authToken!);
   };
 
   const clearPost = (event: React.MouseEvent) => {
     event.preventDefault();
-    presenterRef.current!.clearPost();
+    presenter.clearPost();
   };
 
   const checkButtonStatus: () => boolean = () => {
-    return presenterRef.current!.checkButtonStatus(
+    return presenter.checkButtonStatus(
       post,
       authToken,
       currentUser,

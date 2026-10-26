@@ -2,13 +2,12 @@ import "./AppNavbar.css";
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import Image from "react-bootstrap/Image";
-import { useMessageActions } from "../toaster/MessageHooks";
+import { useMessageListener } from "../toaster/MessageHooks";
 import {
   useUserInfo,
   useUserInfoActions,
 } from "../userInfo/UserInfoHooks";
-import { ToastType } from "../toaster/Toast";
-import { useRef } from "react";
+import { usePresenter } from "../presenter/PresenterHooks";
 import {
   AppNavbarPresenter,
   AppNavbarView,
@@ -21,25 +20,16 @@ const AppNavbar = () => {
   const { clearUserInfo } = useUserInfoActions();
 
   const navigate = useNavigate();
-  const { displayToast, deleteToast } = useMessageActions();
 
   const listener: AppNavbarView = {
-    clearUserInfo: () => clearUserInfo(),
+    ...useMessageListener(),
+    clearUserInfo,
     navigateTo: (url: string) => navigate(url),
-    displayInfoMessage: (message: string, duration: number) =>
-      displayToast(ToastType.Info, message, duration),
-    displayErrorMessage: (message: string) =>
-      displayToast(ToastType.Error, message, 0),
-    deleteMessage: (messageId: string) => deleteToast(messageId),
   };
-
-  const presenterRef = useRef<AppNavbarPresenter | null>(null);
-  if (!presenterRef.current) {
-    presenterRef.current = new AppNavbarPresenter(listener);
-  }
+  const presenter = usePresenter(() => new AppNavbarPresenter(listener));
 
   const logOut = async () => {
-    await presenterRef.current!.logOut(authToken!);
+    await presenter.logOut(authToken!);
   };
 
   return (

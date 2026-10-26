@@ -1,17 +1,15 @@
 import "./Register.css";
 import "bootstrap/dist/css/bootstrap.css";
-import { ChangeEvent, useRef, useState } from "react";
-import { useUserInfoActions } from "../../userInfo/UserInfoHooks";
-import { Link, useNavigate } from "react-router-dom";
+import { ChangeEvent, useState } from "react";
+import { Link } from "react-router-dom";
 import AuthenticationFormLayout from "../AuthenticationFormLayout";
-import { AuthToken, User } from "tweeter-shared";
-import { useMessageActions } from "../../toaster/MessageHooks";
-import { ToastType } from "../../toaster/Toast";
 import AuthenticationFields from "../AuthenticationFields";
 import {
   RegisterPresenter,
   RegisterView,
 } from "../../../presenter/RegisterPresenter";
+import { useAuthenticationListener } from "../AuthenticationHooks";
+import { usePresenter } from "../../presenter/PresenterHooks";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
@@ -24,34 +22,16 @@ const Register = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const navigate = useNavigate();
-  const { updateUserInfo } = useUserInfoActions();
-  const { displayToast } = useMessageActions();
-
   const listener: RegisterView = {
-    setIsLoading: (isLoading: boolean) => setIsLoading(isLoading),
-    setImageUrl: (url: string) => setImageUrl(url),
-    setImageBytes: (bytes: Uint8Array) => setImageBytes(bytes),
-    setImageFileExtension: (extension: string) =>
-      setImageFileExtension(extension),
-    updateUserInfo: (
-      currentUser: User,
-      displayedUser: User | null,
-      authToken: AuthToken,
-      remember: boolean
-    ) => updateUserInfo(currentUser, displayedUser, authToken, remember),
-    navigateTo: (url: string) => navigate(url),
-    displayErrorMessage: (message: string) =>
-      displayToast(ToastType.Error, message, 0),
+    ...useAuthenticationListener(setIsLoading),
+    setImageUrl,
+    setImageBytes,
+    setImageFileExtension,
   };
-
-  const presenterRef = useRef<RegisterPresenter | null>(null);
-  if (!presenterRef.current) {
-    presenterRef.current = new RegisterPresenter(listener);
-  }
+  const presenter = usePresenter(() => new RegisterPresenter(listener));
 
   const checkSubmitButtonStatus = (): boolean => {
-    return presenterRef.current!.checkSubmitButtonStatus(
+    return presenter.checkSubmitButtonStatus(
       firstName,
       lastName,
       alias,
@@ -69,11 +49,11 @@ const Register = () => {
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    presenterRef.current!.handleImageFile(file);
+    presenter.handleImageFile(file);
   };
 
   const doRegister = async () => {
-    await presenterRef.current!.doRegister(
+    await presenter.doRegister(
       firstName,
       lastName,
       alias,

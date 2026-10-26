@@ -1,13 +1,12 @@
 import "./UserInfoComponent.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   useUserInfo,
   useUserInfoActions,
 } from "./UserInfoHooks";
-import { useMessageActions } from "../toaster/MessageHooks";
-import { User } from "tweeter-shared";
-import { ToastType } from "../toaster/Toast";
+import { useMessageListener } from "../toaster/MessageHooks";
+import { usePresenter } from "../presenter/PresenterHooks";
 import {
   UserInfoPresenter,
   UserInfoView,
@@ -19,8 +18,6 @@ const UserInfo = () => {
   const [followerCount, setFollowerCount] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { displayToast, deleteToast } = useMessageActions();
-
   const { currentUser, authToken, displayedUser } = useUserInfo();
   const { setDisplayedUser } = useUserInfoActions();
 
@@ -28,30 +25,22 @@ const UserInfo = () => {
   const location = useLocation();
 
   const listener: UserInfoView = {
-    setIsFollower: (isFollower: boolean) => setIsFollower(isFollower),
-    setFolloweeCount: (count: number) => setFolloweeCount(count),
-    setFollowerCount: (count: number) => setFollowerCount(count),
-    setIsLoading: (isLoading: boolean) => setIsLoading(isLoading),
-    setDisplayedUser: (user: User) => setDisplayedUser(user),
+    ...useMessageListener(),
+    setIsFollower,
+    setFolloweeCount,
+    setFollowerCount,
+    setIsLoading,
+    setDisplayedUser,
     navigateTo: (url: string) => navigate(url),
-    displayInfoMessage: (message: string, duration: number) =>
-      displayToast(ToastType.Info, message, duration),
-    displayErrorMessage: (message: string) =>
-      displayToast(ToastType.Error, message, 0),
-    deleteMessage: (messageId: string) => deleteToast(messageId),
   };
-
-  const presenterRef = useRef<UserInfoPresenter | null>(null);
-  if (!presenterRef.current) {
-    presenterRef.current = new UserInfoPresenter(listener);
-  }
+  const presenter = usePresenter(() => new UserInfoPresenter(listener));
 
   if (!displayedUser) {
     setDisplayedUser(currentUser!);
   }
 
   useEffect(() => {
-    presenterRef.current!.loadUserInfo(
+    presenter.loadUserInfo(
       authToken!,
       currentUser!,
       displayedUser!
@@ -60,7 +49,7 @@ const UserInfo = () => {
 
   const switchToLoggedInUser = (event: React.MouseEvent): void => {
     event.preventDefault();
-    presenterRef.current!.switchToLoggedInUser(
+    presenter.switchToLoggedInUser(
       currentUser!,
       location.pathname
     );
@@ -70,7 +59,7 @@ const UserInfo = () => {
     event: React.MouseEvent,
   ): Promise<void> => {
     event.preventDefault();
-    await presenterRef.current!.followDisplayedUser(
+    await presenter.followDisplayedUser(
       authToken!,
       displayedUser!
     );
@@ -80,7 +69,7 @@ const UserInfo = () => {
     event: React.MouseEvent,
   ): Promise<void> => {
     event.preventDefault();
-    await presenterRef.current!.unfollowDisplayedUser(
+    await presenter.unfollowDisplayedUser(
       authToken!,
       displayedUser!
     );
