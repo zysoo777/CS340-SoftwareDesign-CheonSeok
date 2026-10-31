@@ -10,6 +10,7 @@ import { usePresenter } from "../../presenter/PresenterHooks";
 
 interface Props {
   originalUrl?: string;
+  presenter?: LoginPresenter;
 }
 
 const Login = (props: Props) => {
@@ -19,7 +20,7 @@ const Login = (props: Props) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const listener = useAuthenticationListener(setIsLoading);
-  const presenter = usePresenter(() => new LoginPresenter(listener));
+  const presenter = usePresenter(() => props.presenter ?? new LoginPresenter(listener));
 
   const checkSubmitButtonStatus = (): boolean => {
     return presenter.checkSubmitButtonStatus(alias, password);

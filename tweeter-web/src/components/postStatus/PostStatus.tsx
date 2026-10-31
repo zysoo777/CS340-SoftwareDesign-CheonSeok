@@ -8,7 +8,10 @@ import {
   PostStatusView,
 } from "../../presenter/PostStatusPresenter";
 
-const PostStatus = () => {
+interface Props {
+  presenter?: PostStatusPresenter;
+}
+const PostStatus = (props: Props) => {
   const { currentUser, authToken } = useUserInfo();
   const [post, setPost] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +21,7 @@ const PostStatus = () => {
     setPost,
     setIsLoading,
   };
-  const presenter = usePresenter(() => new PostStatusPresenter(listener));
+  const presenter = usePresenter(() => props.presenter ?? new PostStatusPresenter(listener));
 
   const submitPost = async (event: React.MouseEvent) => {
     event.preventDefault();

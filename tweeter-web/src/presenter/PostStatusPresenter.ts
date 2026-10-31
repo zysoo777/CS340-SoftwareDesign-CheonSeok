@@ -7,8 +7,13 @@ export interface PostStatusView extends ProgressView {
 }
 
 export class PostStatusPresenter extends ProgressPresenter<PostStatusView> {
-  private statusService = new StatusService();
+  private _statusService = new StatusService();
 
+  // Public getter so tests can replace the service with a mock
+  public get statusService(): StatusService {
+    return this._statusService;
+  }
+  
   public async submitPost(
     post: string,
     currentUser: User,
